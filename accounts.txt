@@ -1,22 +1,3 @@
-# X1 EcoChain Auto Bot - Private Keys Configuration
-# ===================================================
-# 
-# INSTRUCTIONS:
-# 1. Add your private keys below, one per line
-# 2. Private keys can start with or without "0x"
-# 3. Lines starting with "#" are comments (ignored)
-# 4. Empty lines are ignored
-#
-# SECURITY WARNING:
-# - NEVER share this file with anyone
-# - NEVER commit this file to Git (it's in .gitignore)
-# - Use TESTNET wallets only
-# - Keep backup of your private keys in secure location
-#
 # FORMAT EXAMPLES:
-# 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
-# abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
-#
-# ===================================================
-
-# Add your private keys below (one per line):
+0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
