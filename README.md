@@ -4,27 +4,27 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
 
-**Advanced Multi-Account Manager** untuk X1 EcoChain Testnet dengan antarmuka yang cantik dan fitur lengkap.
+**Advanced Multi-Account Manager** for X1 EcoChain Testnet with beautiful interface and complete features.
 
 ![X1 EcoChain Bot Banner](https://via.placeholder.com/800x200/00d4ff/ffffff?text=X1+EcoChain+Automation+Bot)
 
-## ✨ Fitur Utama
+## ✨ Key Features
 
-- 🔐 **Multi-Account Support** - Kelola banyak akun sekaligus
-- 💰 **Auto Claim Faucet** - Klaim testnet token otomatis
-- 🎯 **Auto Complete Quests** - Selesaikan semua quest secara otomatis
-- 🔄 **24-Hour Loop Mode** - Jalankan bot secara continuous
-- 🎨 **Beautiful UI** - Antarmuka terminal berwarna dengan logging yang informatif
-- ⚡ **Fast & Efficient** - Optimized untuk performa terbaik
-- 🛡️ **Error Handling** - Robust error handling untuk stabilitas maksimal
+- 🔐 **Multi-Account Support** - Manage multiple accounts simultaneously
+- 💰 **Auto Claim Faucet** - Automatically claim testnet tokens
+- 🎯 **Auto Complete Quests** - Complete all quests automatically
+- 🔄 **24-Hour Loop Mode** - Run bot continuously
+- 🎨 **Beautiful UI** - Colorful terminal interface with informative logging
+- ⚡ **Fast & Efficient** - Optimized for best performance
+- 🛡️ **Error Handling** - Robust error handling for maximum stability
 
-## 📋 Prasyarat
+## 📋 Prerequisites
 
-- Python 3.8 atau lebih tinggi
+- Python 3.8 or higher
 - pip (Python package manager)
-- Private key wallet Ethereum
+- Ethereum wallet private key
 
-## 🔧 Instalasi
+## 🔧 Installation
 
 ### 1. Clone Repository
 
@@ -39,44 +39,44 @@ cd X1-Ecochain-Auto-Bot
 pip install -r requirements.txt
 ```
 
-atau manual:
+or manually:
 
 ```bash
 pip install requests eth-account web3 colorama
 ```
 
-### 3. Setup Akun
+### 3. Setup Accounts
 
-Buat file `accounts.txt` dan masukkan private key Anda (satu per baris):
+Create `accounts.txt` file and add your private keys (one per line):
 
 ```
 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
 0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
-# Tambahkan lebih banyak private key jika perlu
+# Add more private keys as needed
 ```
 
-⚠️ **PENTING**: Jangan pernah share private key Anda ke siapapun!
+⚠️ **IMPORTANT**: Never share your private keys with anyone!
 
-## 🚀 Cara Penggunaan
+## 🚀 Usage
 
-### Jalankan Bot
+### Run the Bot
 
 ```bash
 python bot.py
 ```
 
-### Menu Pilihan
+### Menu Options
 
-Bot akan menampilkan menu dengan 6 opsi:
+The bot will display a menu with 6 options:
 
-1. **Sign In Only** - Login semua akun
-2. **Claim Faucet Only** - Klaim faucet untuk semua akun
-3. **Complete Quests Only** - Selesaikan quest untuk semua akun
-4. **Full Auto (One Time)** ⭐ *RECOMMENDED* - Jalankan semua fitur sekali
-5. **Complete Specific Quest** - Selesaikan quest dengan ID tertentu
-6. **Full Auto (24 Hour Loop)** 🔄 - Jalankan bot setiap 24 jam
+1. **Sign In Only** - Login all accounts
+2. **Claim Faucet Only** - Claim faucet for all accounts
+3. **Complete Quests Only** - Complete quests for all accounts
+4. **Full Auto (One Time)** ⭐ *RECOMMENDED* - Run all features once
+5. **Complete Specific Quest** - Complete quest with specific ID
+6. **Full Auto (24 Hour Loop)** 🔄 - Run bot every 24 hours
 
-### Contoh Output
+### Example Output
 
 ```
     ╔═══════════════════════════════════════════════════════╗
@@ -94,44 +94,44 @@ Bot akan menampilkan menu dengan 6 opsi:
 [12:35:03] ✅ Quest completed! Reward: 100 points 🎉
 ```
 
-## 📁 Struktur File
+## 📁 File Structure
 
 ```
 X1-Ecochain-Auto-Bot/
 │
-├── bot.py              # File utama bot
-├── accounts.txt        # File berisi private keys (buat sendiri)
-├── requirements.txt    # Dependencies Python
-├── README.md          # Dokumentasi
+├── bot.py              # Main bot file
+├── accounts.txt        # File containing private keys (create yourself)
+├── requirements.txt    # Python dependencies
+├── README.md          # Documentation
 ├── LICENSE            # License file
 └── .gitignore         # Git ignore file
 ```
 
-## ⚙️ Konfigurasi
+## ⚙️ Configuration
 
-### Mengubah Delay Antar Akun
+### Change Delay Between Accounts
 
-Edit di dalam fungsi yang dipanggil, default `delay=3` detik:
+Edit the delay parameter in function calls, default is `delay=3` seconds:
 
 ```python
-run_full_auto(filename="accounts.txt", delay=5)  # Ubah ke 5 detik
+run_full_auto(filename="accounts.txt", delay=5)  # Change to 5 seconds
 ```
 
-### Mengubah File Akun
+### Change Account File
 
-Jika ingin menggunakan file lain selain `accounts.txt`:
+If you want to use a different file instead of `accounts.txt`:
 
 ```python
 run_full_auto(filename="my_accounts.txt")
 ```
 
-## 🛡️ Keamanan
+## 🛡️ Security
 
-- ✅ File `accounts.txt` sudah ada di `.gitignore`
-- ✅ Private key tidak pernah dikirim ke server eksternal
-- ✅ Signature dilakukan secara lokal
-- ⚠️ Jangan pernah commit file yang berisi private key
-- ⚠️ Gunakan wallet testnet saja, jangan wallet utama
+- ✅ `accounts.txt` file is already in `.gitignore`
+- ✅ Private keys are never sent to external servers
+- ✅ Signatures are created locally
+- ⚠️ Never commit files containing private keys
+- ⚠️ Use testnet wallets only, not your main wallet
 
 ## 🐛 Troubleshooting
 
@@ -143,48 +143,48 @@ pip install -r requirements.txt --upgrade
 
 ### Error: Invalid private key
 
-Pastikan private key Anda:
-- Memiliki panjang 64 karakter (tanpa 0x) atau 66 karakter (dengan 0x)
-- Format hexadecimal yang valid
-- Tidak ada spasi atau karakter tambahan
+Make sure your private key:
+- Has 64 characters (without 0x) or 66 characters (with 0x)
+- Valid hexadecimal format
+- No spaces or extra characters
 
 ### Error: Authentication failed
 
-- Cek koneksi internet Anda
-- Pastikan API endpoint masih aktif
-- Tunggu beberapa saat dan coba lagi
+- Check your internet connection
+- Make sure API endpoint is still active
+- Wait a moment and try again
 
-## 📊 Fitur yang Akan Datang
+## 📊 Upcoming Features
 
-- [ ] Support untuk proxy
-- [ ] Dashboard web interface
-- [ ] Notifikasi Telegram
-- [ ] Auto export hasil ke CSV
-- [ ] Multi-threading untuk akun banyak
+- [ ] Proxy support
+- [ ] Web dashboard interface
+- [ ] Telegram notifications
+- [ ] Auto export results to CSV
+- [ ] Multi-threading for multiple accounts
 
-## 🤝 Kontribusi
+## 🤝 Contributing
 
-Kontribusi sangat diterima! Silakan:
+Contributions are welcome! Please:
 
-1. Fork repository ini
-2. Buat branch fitur (`git checkout -b feature/AmazingFeature`)
-3. Commit perubahan (`git commit -m 'Add some AmazingFeature'`)
-4. Push ke branch (`git push origin feature/AmazingFeature`)
-5. Buat Pull Request
+1. Fork this repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Create Pull Request
 
 ## 📝 License
 
-Project ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) untuk detail.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## ⚠️ Disclaimer
 
-Bot ini dibuat untuk keperluan edukasi dan testing di testnet. Penggunaan di mainnet atau untuk tujuan yang melanggar Terms of Service adalah tanggung jawab pengguna.
+This bot is created for educational purposes and testing on testnet. Use on mainnet or for purposes that violate Terms of Service is at user's own risk.
 
 **Use at your own risk!**
 
 ## 💬 Support
 
-Jika Anda menemukan bug atau memiliki saran:
+If you find bugs or have suggestions:
 
 - 🐛 [Report Bug](https://github.com/febriyan9346/X1-Ecochain-Auto-Bot/issues)
 - 💡 [Request Feature](https://github.com/febriyan9346/X1-Ecochain-Auto-Bot/issues)
@@ -197,7 +197,7 @@ Jika Anda menemukan bug atau memiliki saran:
 
 ## 🌟 Star History
 
-Jika project ini membantu Anda, berikan ⭐ untuk repository ini!
+If this project helps you, give a ⭐ to this repository!
 
 ---
 
