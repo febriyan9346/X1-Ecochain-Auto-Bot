@@ -55,6 +55,14 @@ Create `accounts.txt` file and add your private keys (one per line):
 # Add more private keys as needed
 ```
 
+### proxy.txt (Optional)
+Add proxy in the following formats:
+```
+http://username:password@ip:port
+http://ip:port
+socks5://username:password@ip:port
+```
+
 ⚠️ **IMPORTANT**: Never share your private keys with anyone!
 
 ## 🚀 Usage
