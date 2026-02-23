@@ -92,7 +92,7 @@ class X1EcoChainBot:
         params = {"address": self.wallet.address}
         
         try:
-            response = self.session.get(url, headers=self.headers, params=params)
+            response = self.session.get(url, headers=self.headers, params=params, timeout=15)
             if response.status_code == 200:
                 data = response.json()
                 if "message" in data:
@@ -111,7 +111,7 @@ class X1EcoChainBot:
         headers['authorization'] = self.token
         
         try:
-            response = self.session.get(url, headers=headers)
+            response = self.session.get(url, headers=headers, timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
@@ -131,7 +131,7 @@ class X1EcoChainBot:
         headers['authorization'] = self.token
         
         try:
-            response = self.session.get(url, headers=headers)
+            response = self.session.get(url, headers=headers, timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
@@ -169,7 +169,7 @@ class X1EcoChainBot:
         }
         
         try:
-            response = self.session.post(url, headers=self.headers, json=payload)
+            response = self.session.post(url, headers=self.headers, json=payload, timeout=15)
             
             if response.status_code == 200:
                 try:
@@ -188,7 +188,7 @@ class X1EcoChainBot:
     
     def perform_self_transfer(self):
         if not self.wallet:
-            return False
+            return {'success': False, 'hash': None}
         
         try:
             account_address = self.wallet.address
@@ -210,16 +210,18 @@ class X1EcoChainBot:
             signed_tx = self.web3.eth.account.sign_transaction(tx, self.wallet.key)
             tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
             
-            self.web3.eth.wait_for_transaction_receipt(tx_hash)
-            return True
+            receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
+            if receipt.status == 1:
+                return {'success': True, 'hash': tx_hash.hex()}
+            return {'success': False, 'hash': tx_hash.hex()}
         except Exception as e:
             time_str = datetime.now(pytz.timezone('Asia/Jakarta')).strftime('%H:%M:%S')
             print(f"[{time_str}] {Fore.RED}[DEBUG] Detail Error Transfer: {str(e)}{Style.RESET_ALL}")
-            return False
+            return {'success': False, 'hash': None}
 
     def perform_swap(self):
         if not self.wallet:
-            return False
+            return {'success': False, 'hash': None}
         
         try:
             router_address = self.web3.to_checksum_address("0x1BEC6C32bAA0881EA3f3Ec5e95d10EF8a252589B")
@@ -282,19 +284,19 @@ class X1EcoChainBot:
             
             receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
             if receipt.status == 1:
-                return True
-            return False
+                return {'success': True, 'hash': tx_hash.hex()}
+            return {'success': False, 'hash': tx_hash.hex()}
             
         except Exception as e:
             time_str = datetime.now(pytz.timezone('Asia/Jakarta')).strftime('%H:%M:%S')
             print(f"[{time_str}] {Fore.RED}[DEBUG] Detail Error Swap: {str(e)}{Style.RESET_ALL}")
-            return False
+            return {'success': False, 'hash': None}
 
     def claim_faucet(self):
         if not self.wallet or not self.token:
             return {'success': False, 'message': 'Not configured', 'already_done': False}
         
-        url = "{}/faucet".format(self.base_url)
+        url = "https://nft-api.x1eco.com/testnet/faucet"
         
         headers = self.headers.copy()
         headers["authorization"] = self.token
@@ -302,14 +304,20 @@ class X1EcoChainBot:
         params = {"address": self.wallet.address}
         
         try:
-            response = self.session.get(url, headers=headers, params=params)
+            response = self.session.get(url, headers=headers, params=params, timeout=15)
             
             if response.status_code == 200:
-                data = response.json()
-                return {'success': True, 'message': 'Claimed', 'data': data, 'already_done': False}
+                if "ok" in response.text.lower():
+                    return {'success': True, 'message': 'Claimed', 'data': response.text, 'already_done': False}
+                else:
+                    try:
+                        data = response.json()
+                        return {'success': True, 'message': 'Claimed', 'data': data, 'already_done': False}
+                    except:
+                        return {'success': True, 'message': 'Claimed', 'data': response.text, 'already_done': False}
             else:
                 error_msg = response.text
-                if "24 hours" in error_msg or "once every" in error_msg:
+                if "24 hours" in error_msg.lower() or "once every" in error_msg.lower():
                     return {'success': False, 'message': 'Already claimed (24h cooldown)', 'already_done': True}
                 else:
                     return {'success': False, 'message': error_msg, 'already_done': False}
@@ -329,7 +337,7 @@ class X1EcoChainBot:
         params = {"quest_id": quest_id}
         
         try:
-            response = self.session.post(url, headers=headers, params=params)
+            response = self.session.post(url, headers=headers, params=params, timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
@@ -354,7 +362,7 @@ class X1EcoChainBot:
         headers['areyouahuman'] = 'true'
         
         try:
-            response = self.session.get(url, headers=headers)
+            response = self.session.get(url, headers=headers, timeout=15)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -363,6 +371,7 @@ class X1EcoChainBot:
             return None
     
     def process_quests(self):
+        wib = pytz.timezone('Asia/Jakarta')
         quests = self.get_quests()
         if not quests:
             return {'completed': 0, 'total_reward': 0, 'quest_details': []}
@@ -409,27 +418,59 @@ class X1EcoChainBot:
             time.sleep(random.randint(1, 2))
             
             if quest_type == 'transfer':
-                print(f"{Fore.CYAN}    -> Performing On-Chain Transfer for Quest...{Style.RESET_ALL}")
-                tx_success = self.perform_self_transfer()
-                if tx_success:
-                    print(f"{Fore.GREEN}    -> Transfer Success! Verifying...{Style.RESET_ALL}")
-                    time.sleep(2)
-                else:
-                    print(f"{Fore.RED}    -> Transfer Failed (Insufficient Balance?){Style.RESET_ALL}")
+                tx_result = None
+                for attempt in range(3):
+                    time_str = datetime.now(wib).strftime('%H:%M:%S')
+                    if attempt == 0:
+                        print(f"[{time_str}] {Fore.CYAN}[INFO] Performing On-Chain Transfer 0.011 X1T...{Style.RESET_ALL}")
+                    else:
+                        print(f"[{time_str}] {Fore.YELLOW}[INFO] Retrying On-Chain Transfer (Attempt {attempt + 1}/3)...{Style.RESET_ALL}")
+                    
+                    tx_result = self.perform_self_transfer()
+                    if tx_result and tx_result.get('success'):
+                        time_str = datetime.now(wib).strftime('%H:%M:%S')
+                        tx_hash = tx_result.get('hash', '')
+                        print(f"[{time_str}] {Fore.GREEN}[SUCCESS] Transfer Success! Tx: {tx_hash}{Style.RESET_ALL}")
+                        time.sleep(2)
+                        break
+                    time.sleep(3)
+                    
+                if not tx_result or not tx_result.get('success'):
+                    time_str = datetime.now(wib).strftime('%H:%M:%S')
+                    print(f"[{time_str}] {Fore.RED}[ERROR] Transfer Failed (Insufficient Balance?){Style.RESET_ALL}")
                     quest_details.append({'name': quest_title, 'status': 'failed', 'reward': 0})
                     continue
+                    
             elif quest_type == 'swap':
-                print(f"{Fore.CYAN}    -> Performing On-Chain Swap for Quest...{Style.RESET_ALL}")
-                tx_success = self.perform_swap()
-                if tx_success:
-                    print(f"{Fore.GREEN}    -> Swap Success! Verifying...{Style.RESET_ALL}")
-                    time.sleep(2)
-                else:
-                    print(f"{Fore.RED}    -> Swap Failed (Insufficient Balance or Gas?){Style.RESET_ALL}")
+                tx_result = None
+                for attempt in range(3):
+                    time_str = datetime.now(wib).strftime('%H:%M:%S')
+                    if attempt == 0:
+                        print(f"[{time_str}] {Fore.CYAN}[INFO] Performing On-Chain Swap 0.001 WX1T to USDT...{Style.RESET_ALL}")
+                    else:
+                        print(f"[{time_str}] {Fore.YELLOW}[INFO] Retrying On-Chain Swap (Attempt {attempt + 1}/3)...{Style.RESET_ALL}")
+                    
+                    tx_result = self.perform_swap()
+                    if tx_result and tx_result.get('success'):
+                        time_str = datetime.now(wib).strftime('%H:%M:%S')
+                        tx_hash = tx_result.get('hash', '')
+                        print(f"[{time_str}] {Fore.GREEN}[SUCCESS] Swap Success! Tx: {tx_hash}{Style.RESET_ALL}")
+                        time.sleep(2)
+                        break
+                    time.sleep(3)
+                    
+                if not tx_result or not tx_result.get('success'):
+                    time_str = datetime.now(wib).strftime('%H:%M:%S')
+                    print(f"[{time_str}] {Fore.RED}[ERROR] Swap Failed (Insufficient Balance or Gas?){Style.RESET_ALL}")
                     quest_details.append({'name': quest_title, 'status': 'failed', 'reward': 0})
                     continue
 
-            result = self.complete_quest_request(quest_id)
+            result = None
+            for attempt in range(3):
+                result = self.complete_quest_request(quest_id)
+                if result and (result.get('success') or result.get('already_claimed')):
+                    break
+                time.sleep(2)
             
             if result and result.get('success'):
                 completed_count += 1
@@ -538,7 +579,7 @@ class BotManager:
         with open(filename, 'r') as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith('#'): 
+                if not line:
                     continue
                 clean_key = line.replace('0x', '')
                 if len(clean_key) == 64:
@@ -556,7 +597,7 @@ class BotManager:
         with open(filename, 'r') as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith('#'): 
+                if not line:
                     continue
                 proxies.append(line)
         
@@ -591,14 +632,14 @@ class BotManager:
         
         cycle = 1
         while True:
-            self.log("Cycle #{} Started".format(cycle), "CYCLE")
+            self.log("Cycle {} Started".format(cycle), "CYCLE")
             print("{}------------------------------------------------------------{}".format(Fore.CYAN, Style.RESET_ALL))
             
             success_count = 0
             total_accounts = len(private_keys)
             
             for idx, private_key in enumerate(private_keys, 1):
-                self.log("Account #{}/{}".format(idx, total_accounts), "INFO")
+                self.log("Account {}/{}".format(idx, total_accounts), "INFO")
                 
                 proxy = None
                 if use_proxy and proxies:
@@ -683,9 +724,9 @@ class BotManager:
                         referrals_count = points_info.get('referrals_count', 0)
                         points_gained = final_points - initial_points
                         
-                        print("[{}] {}[SUCCESS] Total Points: {:,} | Ref Points: {} | Rank: #{}{}".format(
+                        print("[{}] {}[SUCCESS] Total Points: {:,} | Ref Points: {} | Rank: {}{}".format(
                             time_str, Fore.GREEN, final_points, ref_points, rank, Style.RESET_ALL))
-                        print("[{}] {}[SUCCESS] Referral Rank: #{} | Referrals: {} | Today Gained: +{}{}".format(
+                        print("[{}] {}[SUCCESS] Referral Rank: {} | Referrals: {} | Today Gained: +{}{}".format(
                             time_str, Fore.GREEN, referral_rank, referrals_count, points_gained, Style.RESET_ALL))
                     
                     success_count += 1
@@ -698,7 +739,7 @@ class BotManager:
                     time.sleep(2)
             
             print("{}------------------------------------------------------------{}".format(Fore.CYAN, Style.RESET_ALL))
-            self.log("Cycle #{} Complete | Success: {}/{}".format(cycle, success_count, total_accounts), "CYCLE")
+            self.log("Cycle {} Complete | Success: {}/{}".format(cycle, success_count, total_accounts), "CYCLE")
             print("{}============================================================{}\n".format(Fore.CYAN, Style.RESET_ALL))
             
             cycle += 1
