@@ -22,8 +22,8 @@ init(autoreset=True)
 
 class X1EcoChainBot:
     def __init__(self, private_key=None, proxy=None, ref_code=None):
-        self.base_url = "https://testnet-api.x1.one"
-        self.rpc_url = "https://testnet-rpc.x1.one"
+        self.base_url = "https://testnet-api.x1eco.com"
+        self.rpc_url = "https://maculatus-rpc.x1eco.com"
         self.session = requests.Session()
         self.token = None
         self.wallet = None
@@ -31,6 +31,7 @@ class X1EcoChainBot:
         self.user_info = None
         self.ref_code = ref_code if ref_code is not None else ""
         self.web3 = Web3(Web3.HTTPProvider(self.rpc_url))
+        self.chain_id = 10778
         
         if self.proxy:
             self.setup_proxy(proxy)
@@ -42,13 +43,13 @@ class X1EcoChainBot:
             "content-type": "application/json",
             "origin": "https://testnet.x1ecochain.com",
             "referer": "https://testnet.x1ecochain.com/",
-            "sec-ch-ua": '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"',
+            "sec-ch-ua": '"Not:A-Brand";v="99", "Google Chrome";v="145", "Chromium";v="145"',
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": '"Windows"',
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
         }
         
         if private_key:
@@ -87,7 +88,19 @@ class X1EcoChainBot:
         if not self.wallet:
             raise Exception("Wallet belum di-setup!")
         
-        return "X1 AuthMessage, Address {}".format(self.wallet.address.lower())
+        url = f"{self.base_url}/signin"
+        params = {"address": self.wallet.address}
+        
+        try:
+            response = self.session.get(url, headers=self.headers, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                if "message" in data:
+                    return data["message"]
+        except Exception as e:
+            pass
+        
+        return f"X1 AuthMessage, Address {self.wallet.address.lower()}"
     
     def get_user_info(self):
         if not self.token:
@@ -191,15 +204,90 @@ class X1EcoChainBot:
                 'value': value,
                 'gas': 21000,
                 'gasPrice': gas_price,
-                'chainId': self.web3.eth.chain_id
+                'chainId': self.chain_id
             }
             
             signed_tx = self.web3.eth.account.sign_transaction(tx, self.wallet.key)
-            tx_hash = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
             
             self.web3.eth.wait_for_transaction_receipt(tx_hash)
             return True
         except Exception as e:
+            time_str = datetime.now(pytz.timezone('Asia/Jakarta')).strftime('%H:%M:%S')
+            print(f"[{time_str}] {Fore.RED}[DEBUG] Detail Error Transfer: {str(e)}{Style.RESET_ALL}")
+            return False
+
+    def perform_swap(self):
+        if not self.wallet:
+            return False
+        
+        try:
+            router_address = self.web3.to_checksum_address("0x1BEC6C32bAA0881EA3f3Ec5e95d10EF8a252589B")
+            token_in = self.web3.to_checksum_address("0xe2ED17Ae5e68863E77899205a83A8F1E138c608f")
+            token_out = self.web3.to_checksum_address("0xd127BA1f0EfA2c5c7d9e6E7339DBafe2A6b1EAeC")
+            
+            router_abi = [{
+                "inputs": [{
+                    "components": [
+                        {"internalType": "address", "name": "tokenIn", "type": "address"},
+                        {"internalType": "address", "name": "tokenOut", "type": "address"},
+                        {"internalType": "uint24", "name": "fee", "type": "uint24"},
+                        {"internalType": "address", "name": "recipient", "type": "address"},
+                        {"internalType": "uint256", "name": "deadline", "type": "uint256"},
+                        {"internalType": "uint256", "name": "amountIn", "type": "uint256"},
+                        {"internalType": "uint256", "name": "amountOutMinimum", "type": "uint256"},
+                        {"internalType": "uint160", "name": "sqrtPriceLimitX96", "type": "uint160"}
+                    ],
+                    "internalType": "struct ISwapRouter.ExactInputSingleParams",
+                    "name": "params",
+                    "type": "tuple"
+                }],
+                "name": "exactInputSingle",
+                "outputs": [{"internalType": "uint256", "name": "amountOut", "type": "uint256"}],
+                "stateMutability": "payable",
+                "type": "function"
+            }]
+            
+            contract = self.web3.eth.contract(address=router_address, abi=router_abi)
+            
+            amount_in_ether = 0.001
+            amount_in_wei = self.web3.to_wei(amount_in_ether, 'ether')
+            deadline = int(time.time()) + 600
+            
+            params = (
+                token_in,
+                token_out,
+                500,
+                self.wallet.address,
+                deadline,
+                amount_in_wei,
+                0, 
+                0  
+            )
+            
+            nonce = self.web3.eth.get_transaction_count(self.wallet.address)
+            gas_price = self.web3.eth.gas_price
+            
+            tx = contract.functions.exactInputSingle(params).build_transaction({
+                'from': self.wallet.address,
+                'value': amount_in_wei,
+                'gas': 250000,
+                'gasPrice': gas_price,
+                'nonce': nonce,
+                'chainId': self.chain_id
+            })
+            
+            signed_tx = self.web3.eth.account.sign_transaction(tx, self.wallet.key)
+            tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            
+            receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
+            if receipt.status == 1:
+                return True
+            return False
+            
+        except Exception as e:
+            time_str = datetime.now(pytz.timezone('Asia/Jakarta')).strftime('%H:%M:%S')
+            print(f"[{time_str}] {Fore.RED}[DEBUG] Detail Error Swap: {str(e)}{Style.RESET_ALL}")
             return False
 
     def claim_faucet(self):
@@ -224,7 +312,7 @@ class X1EcoChainBot:
                 if "24 hours" in error_msg or "once every" in error_msg:
                     return {'success': False, 'message': 'Already claimed (24h cooldown)', 'already_done': True}
                 else:
-                    return {'success': False, 'message': 'Claim failed', 'already_done': False}
+                    return {'success': False, 'message': error_msg, 'already_done': False}
         except Exception as e:
             return {'success': False, 'message': str(e), 'already_done': False}
     
@@ -330,6 +418,16 @@ class X1EcoChainBot:
                     print(f"{Fore.RED}    -> Transfer Failed (Insufficient Balance?){Style.RESET_ALL}")
                     quest_details.append({'name': quest_title, 'status': 'failed', 'reward': 0})
                     continue
+            elif quest_type == 'swap':
+                print(f"{Fore.CYAN}    -> Performing On-Chain Swap for Quest...{Style.RESET_ALL}")
+                tx_success = self.perform_swap()
+                if tx_success:
+                    print(f"{Fore.GREEN}    -> Swap Success! Verifying...{Style.RESET_ALL}")
+                    time.sleep(2)
+                else:
+                    print(f"{Fore.RED}    -> Swap Failed (Insufficient Balance or Gas?){Style.RESET_ALL}")
+                    quest_details.append({'name': quest_title, 'status': 'failed', 'reward': 0})
+                    continue
 
             result = self.complete_quest_request(quest_id)
             
@@ -432,9 +530,8 @@ class BotManager:
     def load_private_keys(self, filename="accounts.txt"):
         if not os.path.exists(filename):
             self.log("File {} not found!".format(filename), "ERROR")
-            self.log("Creating sample file: {}".format(filename), "INFO")
             with open(filename, 'w') as f:
-                f.write("0x1234567890abcdef...\n")
+                f.write("\n")
             return []
         
         private_keys = []
@@ -452,7 +549,7 @@ class BotManager:
         if not os.path.exists(filename):
             self.log("File {} not found! Running without proxy...".format(filename), "WARNING")
             with open(filename, 'w') as f:
-                f.write("http://123.456.789.0:8080\n")
+                f.write("\n")
             return []
         
         proxies = []
@@ -540,7 +637,7 @@ class BotManager:
                         initial_points = user_info.get('points', 0)
                         rank = user_info.get('rank', 'N/A')
                     
-                    self.log("Processing Tsks...", "INFO")
+                    self.log("Processing Tasks...", "INFO")
                     
                     self.random_delay(1, 2)
                     
@@ -550,6 +647,9 @@ class BotManager:
                        print("[{}] {}[SUCCESS] Task: Faucet Claim | Status: Success{}".format(time_str, Fore.GREEN, Style.RESET_ALL))
                     elif faucet_result.get('already_done'):
                         print("[{}] {}[INFO] Task: Faucet Claim | Status: Cooldown{}".format(time_str, Fore.CYAN, Style.RESET_ALL))
+                    else:
+                        error_msg = faucet_result.get('message', 'Unknown Error')
+                        print("[{}] {}[ERROR] Faucet Request Failed: {}{}".format(time_str, Fore.RED, error_msg, Style.RESET_ALL))
                     
                     self.random_delay(2, 4)
                     
